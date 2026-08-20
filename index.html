@@ -1,0 +1,43 @@
+<!doctype html>
+<!--
+  lang/dir are placeholders only. DirectionProvider rewrites both on mount from
+  the persisted locale, before first paint, via a blocking inline script below.
+-->
+<html lang="en" dir="ltr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>NEXORA — Admin</title>
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect width='24' height='24' rx='6' fill='%236366f1'/%3E%3Cpath d='M6 18V6l12 12V6' fill='none' stroke='white' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E"
+    />
+    <script>
+      // Prevents the flash of wrong theme / wrong direction. Must stay in sync
+      // with the storage keys in src/providers/AppConfig.tsx.
+      ;(function () {
+        try {
+          var raw = localStorage.getItem('nexora.config')
+          if (!raw) return
+          var c = JSON.parse(raw)
+          var root = document.documentElement
+          var mode = c.theme === 'system' || !c.theme
+            ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
+            : c.theme
+          root.classList.toggle('dark', mode === 'dark')
+          root.style.colorScheme = mode
+          if (c.locale) {
+            root.lang = c.locale
+            root.dir = c.dir || (c.locale === 'ar' ? 'rtl' : 'ltr')
+          }
+          if (c.primary) root.style.setProperty('--nx-primary-base', c.primary)
+          if (c.density) root.dataset.density = c.density
+        } catch (e) {}
+      })()
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

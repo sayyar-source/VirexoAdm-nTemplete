@@ -1,0 +1,366 @@
+/* Self-hosted, not a Google Fonts <link>: no third-party request at runtime,
+   and the Arabic face is a real design decision rather than a fallback.
+   Inter has no Arabic coverage — RTL text in Inter silently falls back to
+   whatever the OS supplies, at a different x-height and leading. */
+@import '@fontsource-variable/inter';
+@import '@fontsource/ibm-plex-sans-arabic/400.css';
+@import '@fontsource/ibm-plex-sans-arabic/500.css';
+@import '@fontsource/ibm-plex-sans-arabic/600.css';
+@import '@fontsource/ibm-plex-sans-arabic/700.css';
+@import 'tailwindcss';
+
+/* ---------------------------------------------------------------------------
+   NEXORA — token layer
+   Everything below is a 1:1 transcription of "01 Foundations" from the Figma
+   sheet. Nothing in the app hardcodes a hex value; components only ever refer
+   to semantic tokens (surface / border / fg / primary / success / …) so that
+   dark mode and the runtime primary-colour picker are single-variable changes.
+--------------------------------------------------------------------------- */
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+:root {
+  /* --- raw palette (Figma: Colors / Light Mode) ------------------------- */
+  /* Figma "Primary" is #6366f1. Measured, that is 4.47:1 against white — 0.03
+     short of AA for the 14px label on the primary button and for primary-
+     coloured links. #5457e0 is the nearest step that clears 4.5:1 in both
+     directions and is visually indistinguishable. The mock's exact #6366f1 is
+     kept as chart slot 1, where the bar for a graphical object is 3:1. */
+  --nx-primary-base: #5457e0; /* Primary      (Figma #6366f1, +contrast) */
+  --nx-primary-tint: #eef2ff; /* Primary Light */
+  --nx-success: #10b981;
+  --nx-warning: #f59e0b;
+  --nx-danger: #ef4444;
+  --nx-info: #3b82f6;
+
+  --nx-neutral-50: #f9fafb;
+  --nx-neutral-100: #f3f4f6;
+  --nx-neutral-200: #e5e7eb;
+  --nx-neutral-300: #d1d5db;
+  --nx-neutral-400: #9ca3af;
+  --nx-neutral-500: #6b7280;
+  --nx-neutral-600: #4b5563;
+  --nx-neutral-700: #374151;
+  --nx-neutral-800: #1f2937;
+  --nx-neutral-900: #0f172a;
+
+  /* --- semantic surfaces (light) --------------------------------------- */
+  --nx-bg: var(--nx-neutral-50);
+  --nx-surface: #ffffff;
+  --nx-surface-2: var(--nx-neutral-100);
+  --nx-surface-3: var(--nx-neutral-200);
+  --nx-border: var(--nx-neutral-200);
+  --nx-border-strong: var(--nx-neutral-300);
+  --nx-fg: var(--nx-neutral-900); /* 17.9:1 */
+  --nx-fg-muted: var(--nx-neutral-600); /*  7.6:1 */
+  /* The sheet's tertiary grey is neutral-400, which measures 2.5:1 on white —
+     it is used for timestamps, captions and axis labels, all real text. The
+     500 step is the lightest that still clears 4.5:1 (4.8:1). */
+  --nx-fg-subtle: var(--nx-neutral-500); /*  4.8:1 */
+  --nx-inverse-surface: var(--nx-neutral-900);
+  --nx-inverse-fg: #ffffff;
+
+  /* Sidebar is its own surface in the design (white on #F9FAFB page). */
+  --nx-nav-bg: #ffffff;
+  --nx-nav-fg: var(--nx-neutral-600);
+  --nx-nav-fg-active: var(--nx-primary-fg);
+
+  /* Derived primary ramp. These are the values `buildPrimaryRamp('#5457e0',
+     'light')` produces; AppConfig rewrites all seven on <html> whenever the
+     brand colour or theme changes. They are literal hex (not color-mix) so
+     that `ink` can be *searched* for a passing contrast step, and so that
+     computed styles resolve to rgb() for the contrast audit. */
+  --nx-primary: var(--nx-primary-base);
+  --nx-primary-hover: #4143b1; /* white label 7.9:1  */
+  --nx-primary-active: #333590; /* white label 10.2:1 */
+  --nx-primary-soft: #eceffe;
+  --nx-primary-ink: #5457e0; /* 5.5:1 on white · 4.8:1 on soft */
+  --nx-primary-fg: #ffffff; /* 5.5:1 on primary   */
+  --nx-ring: rgb(84 87 224 / 0.32);
+
+  /* Status "soft" pairs: fill + a text step searched to clear 4.5:1 on that
+     fill. Drawn in the sheet as hue-500 text on hue-50 fill, which measures
+     2.1–3.4:1 (warning "Pending" is the worst at 2.07:1). */
+  --nx-success-soft: #e9f7ef;
+  --nx-success-fg: #077f57; /* 4.55:1 */
+  --nx-warning-soft: #fff0e0;
+  --nx-warning-fg: #9b6204; /* 4.54:1 */
+  --nx-danger-soft: #ffebe8;
+  --nx-danger-fg: #c73737; /* 4.54:1 */
+  --nx-info-soft: #e7f1ff;
+  --nx-info-fg: #2e69c9; /* 4.63:1 */
+  --nx-neutral-soft: var(--nx-neutral-100);
+  --nx-neutral-fg: var(--nx-neutral-600); /* 6.9:1 */
+
+  /* --- categorical chart slots ----------------------------------------- *
+   * Deliberately NOT derived from --nx-primary-base. Series colour follows
+   * the entity, so it must not repaint when the user picks a new brand
+   * colour — and a 3-hue ramp generated from an arbitrary primary cannot be
+   * held to a CVD floor. Slot 1 merely *starts* at the default indigo so the
+   * out-of-the-box dashboard matches the mock.
+   * Validated with the data-viz palette checker: light surface #ffffff,
+   * dark surface #111827; adjacent + all-pairs CVD, lightness band, chroma
+   * floor and contrast all pass in both modes. Slot 3 is below 3:1 on white,
+   * so every chart using it ships visible labels and a table view. */
+  --nx-chart-1: #6366f1;
+  --nx-chart-2: #eb6834;
+  --nx-chart-3: #1baf7a;
+  --nx-chart-4: #eda100;
+  --nx-chart-5: #e87ba4;
+  --nx-chart-grid: var(--nx-neutral-200);
+
+  /* --- density (Figma: Settings / Appearance / Layout) ------------------ */
+  --nx-row-y: 0.75rem;
+  --nx-card-p: 1.25rem;
+  --nx-page-max: 90rem;
+  --nx-gutter: 1.5rem;
+}
+
+/* Dark mode is a token override, not a second stylesheet.
+   Values sampled from the "Dark Mode / Dashboard" + "Dark / CRM Deals" frames. */
+.dark {
+  --nx-bg: #0b1120;
+  --nx-surface: #111827;
+  --nx-surface-2: #1b2436;
+  --nx-surface-3: #26314a;
+  --nx-border: #1f2937;
+  --nx-border-strong: #374151;
+  /* Note the ramp does NOT simply invert: neutral-500 is 4.8:1 on white but
+     only 3.7:1 on #111827, and neutral-400 is the reverse (2.5:1 / 7.0:1).
+     Each mode picks its own step, measured against its own surface. */
+  --nx-fg: var(--nx-neutral-50); /* 17.0:1 */
+  --nx-fg-muted: var(--nx-neutral-300); /* 12.0:1 */
+  --nx-fg-subtle: var(--nx-neutral-400); /*  7.0:1 */
+  --nx-inverse-surface: var(--nx-neutral-50);
+  --nx-inverse-fg: var(--nx-neutral-900);
+
+  --nx-nav-bg: #111827;
+  --nx-nav-fg: #9ca3af;
+
+  /* Soft fills mix toward the dark *surface*, not toward black, or badges glow.
+     The ink steps are re-searched against those darker fills — note the primary
+     ink has to get *lighter* here (#5457e0 is only 3.2:1 on #111827). */
+  --nx-primary-soft: #1e264b;
+  --nx-primary-hover: #6771e7;
+  --nx-primary-active: var(--nx-primary-base);
+  --nx-primary-ink: #7b88ec; /* 5.6:1 on surface · 4.6:1 on soft */
+  --nx-success-soft: #19383b;
+  --nx-success-fg: #10b981; /* 4.96:1 */
+  --nx-warning-soft: #3d3431;
+  --nx-warning-fg: #f59e0b; /* 5.64:1 */
+  --nx-danger-soft: #3e2631;
+  --nx-danger-fg: #f5655f; /* 4.53:1 */
+  --nx-info-soft: #1b2d4f;
+  --nx-info-fg: #5694f9; /* 4.56:1 */
+  --nx-neutral-soft: #1b2436;
+  --nx-neutral-fg: #9ca3af; /* 6.1:1 */
+
+  /* Same five hues, re-stepped for the dark surface — not an automatic
+     lighten. Re-validated as a set against #111827. */
+  --nx-chart-1: #7075f5;
+  --nx-chart-2: #d95926;
+  --nx-chart-3: #199e70;
+  --nx-chart-4: #c98500;
+  --nx-chart-5: #d55181;
+  --nx-chart-grid: #1f2937;
+}
+
+[data-density='compact'] {
+  --nx-row-y: 0.5rem;
+  --nx-card-p: 1rem;
+  --nx-gutter: 1rem;
+}
+[data-density='wide'] {
+  --nx-row-y: 1rem;
+  --nx-card-p: 1.5rem;
+  --nx-page-max: 120rem;
+  --nx-gutter: 2rem;
+}
+
+/* --- Tailwind theme bridge ------------------------------------------------
+   Maps the tokens above onto Tailwind's utility namespace, so `bg-surface`,
+   `text-fg-muted`, `rounded-lg`, `text-h1` all resolve to design tokens.
+------------------------------------------------------------------------- */
+@theme inline {
+  --color-bg: var(--nx-bg);
+  --color-surface: var(--nx-surface);
+  --color-surface-2: var(--nx-surface-2);
+  --color-surface-3: var(--nx-surface-3);
+  --color-border: var(--nx-border);
+  --color-border-strong: var(--nx-border-strong);
+  --color-fg: var(--nx-fg);
+  --color-fg-muted: var(--nx-fg-muted);
+  --color-fg-subtle: var(--nx-fg-subtle);
+  --color-inverse-surface: var(--nx-inverse-surface);
+  --color-inverse-fg: var(--nx-inverse-fg);
+
+  --color-nav-bg: var(--nx-nav-bg);
+  --color-nav-fg: var(--nx-nav-fg);
+
+  --color-primary: var(--nx-primary);
+  --color-primary-hover: var(--nx-primary-hover);
+  --color-primary-active: var(--nx-primary-active);
+  --color-primary-soft: var(--nx-primary-soft);
+  --color-primary-ink: var(--nx-primary-ink);
+  --color-primary-fg: var(--nx-primary-fg);
+  --color-primary-tint: var(--nx-primary-tint);
+
+  --color-success: var(--nx-success);
+  --color-success-soft: var(--nx-success-soft);
+  --color-success-fg: var(--nx-success-fg);
+  --color-warning: var(--nx-warning);
+  --color-warning-soft: var(--nx-warning-soft);
+  --color-warning-fg: var(--nx-warning-fg);
+  --color-danger: var(--nx-danger);
+  --color-danger-soft: var(--nx-danger-soft);
+  --color-danger-fg: var(--nx-danger-fg);
+  --color-info: var(--nx-info);
+  --color-info-soft: var(--nx-info-soft);
+  --color-info-fg: var(--nx-info-fg);
+  --color-neutral-soft: var(--nx-neutral-soft);
+  --color-neutral-fg: var(--nx-neutral-fg);
+
+  --color-ring: var(--nx-ring);
+
+  --color-chart-1: var(--nx-chart-1);
+  --color-chart-2: var(--nx-chart-2);
+  --color-chart-3: var(--nx-chart-3);
+  --color-chart-4: var(--nx-chart-4);
+  --color-chart-5: var(--nx-chart-5);
+  --color-chart-grid: var(--nx-chart-grid);
+
+  /* Typography — Figma: Inter, H1 32/40 · H2 24/32 · H3 20/28 · Body 16/24 ·
+     Body sm 14/20 · Caption 12/16. `--font-ui` keeps an Arabic-capable face in
+     the stack; see ANALYSIS.md §3 for why Inter alone is not enough. */
+  --font-sans: 'Inter Variable', 'Inter', 'IBM Plex Sans Arabic', 'Noto Sans Arabic',
+    ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+
+  --text-h1: 2rem;
+  --text-h1--line-height: 2.5rem;
+  --text-h1--font-weight: 700;
+  --text-h1--letter-spacing: -0.02em;
+  --text-h2: 1.5rem;
+  --text-h2--line-height: 2rem;
+  --text-h2--font-weight: 600;
+  --text-h2--letter-spacing: -0.015em;
+  --text-h3: 1.25rem;
+  --text-h3--line-height: 1.75rem;
+  --text-h3--font-weight: 600;
+  --text-h3--letter-spacing: -0.01em;
+  --text-body: 1rem;
+  --text-body--line-height: 1.5rem;
+  --text-body-sm: 0.875rem;
+  --text-body-sm--line-height: 1.25rem;
+  --text-caption: 0.75rem;
+  --text-caption--line-height: 1rem;
+
+  /* Radius — Figma: 4 / 6 / 8 / 12 / 16 / 20 */
+  --radius-xs: 4px;
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --radius-2xl: 20px;
+  --radius-full: 9999px;
+
+  /* Elevation — Figma: Sm / Md / Lg / Xl */
+  --shadow-sm: 0 1px 2px 0 rgb(15 23 42 / 0.05);
+  --shadow-md: 0 2px 4px -1px rgb(15 23 42 / 0.06), 0 4px 12px -2px rgb(15 23 42 / 0.08);
+  --shadow-lg: 0 4px 8px -2px rgb(15 23 42 / 0.06), 0 12px 24px -4px rgb(15 23 42 / 0.1);
+  --shadow-xl: 0 8px 16px -4px rgb(15 23 42 / 0.08), 0 24px 48px -8px rgb(15 23 42 / 0.14);
+}
+
+@layer base {
+  * {
+    border-color: var(--nx-border);
+  }
+
+  html {
+    -webkit-text-size-adjust: 100%;
+    scrollbar-gutter: stable;
+  }
+
+  body {
+    background-color: var(--nx-bg);
+    color: var(--nx-fg);
+    font-family: var(--font-sans);
+    font-size: var(--text-body-sm);
+    line-height: var(--text-body-sm--line-height);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  /* The design sheet shows no focus-visible state anywhere. This is the
+     project-wide default so keyboard users are never stranded. */
+  :where(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
+    outline: 2px solid var(--nx-primary);
+    outline-offset: 2px;
+    border-radius: var(--radius-xs);
+  }
+
+  ::placeholder {
+    color: var(--nx-fg-subtle);
+  }
+
+  /* Arabic needs more leading than Latin at the same size. */
+  :root:lang(ar) body,
+  [lang='ar'] {
+    line-height: 1.7;
+  }
+}
+
+@layer utilities {
+  /* Directional glyphs (chevrons, arrows, trend lines) mirror; logos, media,
+     clocks and numbers must NOT. Opt in explicitly per icon. */
+  [dir='rtl'] .flip-rtl {
+    transform: scaleX(-1);
+  }
+
+  /* Figures: tabular so columns line up, isolated so a neighbouring Arabic run
+     can't drag them around. Deliberately NOT forced LTR (rtl-ok: prose) — a formatted
+     currency string may legitimately put an RTL symbol after the digits
+     (e.g. "١٢٣ د.إ."), and forcing LTR would throw it to the wrong side. */
+  .num {
+    font-variant-numeric: tabular-nums;
+    unicode-bidi: isolate;
+  }
+
+  /* Opaque identifiers — order numbers, SKUs, emails, phone numbers, hex.
+     These are always read left-to-right regardless of the surrounding script,
+     and their leading punctuation ("#", "+") must not migrate. */
+  .code {
+    font-variant-numeric: tabular-nums;
+    unicode-bidi: isolate;
+    direction: ltr; /* rtl-ok: an identifier is LTR by definition */
+  }
+
+  .nx-scroll {
+    scrollbar-width: thin;
+    scrollbar-color: var(--nx-border-strong) transparent;
+  }
+  .nx-scroll::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  .nx-scroll::-webkit-scrollbar-thumb {
+    background: var(--nx-border-strong);
+    border-radius: var(--radius-full);
+  }
+  .nx-scroll::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .row-y {
+    padding-block: var(--nx-row-y);
+  }
+  .card-p {
+    padding: var(--nx-card-p);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .motion-safe-anim {
+      animation: none !important;
+      transition: none !important;
+    }
+  }
+}
